@@ -1,0 +1,57 @@
+# vim: filetype=dockerfile
+
+FROM quay.io/centos/centos:stream9
+
+ARG USER_NAME
+ARG USER_UID
+
+# dnf group install -y --setopt=install_weak_deps=False 'Development Tools'      \
+RUN                                                                                \
+    : "${USER_NAME:?Build argument needs to be set and non-empty.}";               \
+    : "${USER_UID:?Build argument needs to be set and non-empty.}";                \
+    dnf install -y --allowerasing                                                  \
+        bash-completion                                                            \
+        dnf                                                                        \
+        epel-next-release                                                          \
+        epel-release                                                               \
+        git                                                                        \
+        hostname                                                                   \
+        make                                                                       \
+        sqlite                                                                     \
+        sudo                                                                       \
+        tmux                                                                       \
+        tree                                                                       \
+        util-linux-user                                                            \
+        yum-utils                                                                  \
+        zsh                                                                        \
+    && dnf install -y --allowerasing                                               \
+        coreutils                                                                  \
+        createrepo                                                                 \
+        rpm-build                                                                  \
+        rpm-devel                                                                  \
+        rpmdevtools                                                                \
+        rpmlint                                                                    \
+    && dnf update -y                                                               \
+    && crb enable                                                                  \
+    && dnf install -y                                                              \
+        mc                                                                         \
+        mock                                                                       \
+        neovim                                                                     \
+        python3-neovim
+
+COPY override/ /
+
+RUN                                                                                \
+    passwd -l root                                                                 \
+    && useradd -m -U -s /usr/bin/zsh -G mock,wheel --uid="$USER_UID" "$USER_NAME"  \
+    && passwd -d "$USER_NAME"                                                      \
+    && chmod -R g+rwXs "/home/$USER_NAME"                                          \
+    && rm -rf /root
+
+USER $USER_NAME
+
+WORKDIR /home/$USER_NAME
+
+RUN rpmdev-setuptree
+
+CMD tmux
