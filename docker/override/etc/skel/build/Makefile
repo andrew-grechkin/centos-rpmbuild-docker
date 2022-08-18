@@ -30,6 +30,7 @@ lint: $(RPMBUILD_FOLDER)
 build-src:
 	@echo
 	@echo 'Building source RPMs...'
+	@cp -rf $(HOME)/specs/* $(RPMBUILD_FOLDER)/SOURCES
 	@rpmbuild --undefine=_disable_source_fetch -bs *.spec
 
 build-install-deps:
@@ -40,7 +41,7 @@ build-install-deps:
 build: lint build-src build-install-deps
 	@echo
 	@echo 'Building RPMs...'
-	@rpmbuild --noclean -rb $(RPMBUILD_FOLDER)/SRPMS/vifm-0.12-2.el9.src.rpm
+	@rpmbuild --noclean -rb $(RPMBUILD_FOLDER)/SRPMS/*.src.rpm
 	@tree
 
 #@rpmbuild -rb $(RPMBUILD_FOLDER)/SRPMS/*.src.rpm
