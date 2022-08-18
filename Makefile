@@ -40,8 +40,8 @@ build8: $(IMAGE8_DUMMY) $(PWD)/RPMS
 		-e TERM=xterm-256color                      \
 		-v $(PWD)/RPMS:$(USER_HOME)/rpmbuild/RPMS   \
 		-v $(PWD)/SRPMS:$(USER_HOME)/rpmbuild/SRPMS \
-		-v $(PWD):$(USER_HOME)/specs:ro             \
-		-w $(USER_HOME)/specs                       \
+		-v $(PWD):$(USER_HOME)/mnt:ro               \
+		-w $(USER_HOME)/mnt                         \
 		$(IMAGE8)                                   \
 		make -f $(USER_HOME)/build/Makefile
 
@@ -51,8 +51,8 @@ build9: $(IMAGE9_DUMMY) $(PWD)/RPMS
 		-e TERM=xterm-256color                      \
 		-v $(PWD)/RPMS:$(USER_HOME)/rpmbuild/RPMS   \
 		-v $(PWD)/SRPMS:$(USER_HOME)/rpmbuild/SRPMS \
-		-v $(PWD):$(USER_HOME)/specs:ro             \
-		-w $(USER_HOME)/specs                       \
+		-v $(PWD):$(USER_HOME)/mnt:ro               \
+		-w $(USER_HOME)/mnt                         \
 		$(IMAGE9)                                   \
 		make -f $(USER_HOME)/build/Makefile
 
@@ -61,7 +61,7 @@ run8: $(IMAGE8_DUMMY)
 		-h 8-stream-$(USER_NAME)           \
 		-e TERM=xterm-256color             \
 		-v /media/nfs/home/public/rpm:/rpm \
-		-v $(PWD):$(USER_HOME)/specs:ro    \
+		-v $(PWD):$(USER_HOME)/mnt:ro      \
 		$(IMAGE8)
 
 run9: $(IMAGE9_DUMMY)
@@ -69,7 +69,7 @@ run9: $(IMAGE9_DUMMY)
 		-h 9-stream-$(USER_NAME)           \
 		-e TERM=xterm-256color             \
 		-v /media/nfs/home/public/rpm:/rpm \
-		-v $(PWD):$(USER_HOME)/specs:ro    \
+		-v $(PWD):$(USER_HOME)/mnt:ro      \
 		$(IMAGE9)
 
 run-home: $(IMAGE9_DUMMY)
