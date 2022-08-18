@@ -1,9 +1,9 @@
 GIT_REPO      = $(shell git config --file $(THIS_DIR)/.git/config --get remote.origin.url)
 GIT_REPO_NAME = $(shell basename -s .git $(GIT_REPO))
 IMAGE8        = cos8-repo-sync
-IMAGE8_DUMMY  = /tmp/image-$(GIT_REPO_NAME)-build8
+IMAGE8_DUMMY  = /tmp/dummy-image-$(GIT_REPO_NAME)-build8
 IMAGE9        = cos9-repo-sync
-IMAGE9_DUMMY  = /tmp/image-$(GIT_REPO_NAME)-build9
+IMAGE9_DUMMY  = /tmp/dummy-image-$(GIT_REPO_NAME)-build9
 THIS_DIR      = $(dir $(THIS_FILE))
 THIS_FILE     = $(abspath $(firstword $(MAKEFILE_LIST)))
 USER_HOME     = /home/$(USER_NAME)
@@ -61,6 +61,7 @@ run8: $(IMAGE8_DUMMY)
 		-h 8-stream-$(USER_NAME)           \
 		-e TERM=xterm-256color             \
 		-v /media/nfs/home/public/rpm:/rpm \
+		-v $(PWD):$(USER_HOME)/specs:ro    \
 		$(IMAGE8)
 
 run9: $(IMAGE9_DUMMY)
@@ -68,6 +69,7 @@ run9: $(IMAGE9_DUMMY)
 		-h 9-stream-$(USER_NAME)           \
 		-e TERM=xterm-256color             \
 		-v /media/nfs/home/public/rpm:/rpm \
+		-v $(PWD):$(USER_HOME)/specs:ro    \
 		$(IMAGE9)
 
 run-home: $(IMAGE9_DUMMY)
