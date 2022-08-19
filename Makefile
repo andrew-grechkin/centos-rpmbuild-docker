@@ -30,7 +30,7 @@ $(IMAGE9_DUMMY): $(THIS_FILE) $(BUILD_MAKEFILE) $(THIS_DIR)/docker/Dockerfile-9-
 	@touch $@
 
 $(PWD)/.rpmbuild:
-	@mkdir -p "$(PWD)"/.rpmbuild/{BUILD,BUILDROOT,SOURCES,SPECS,SRPMS} "$(PWD)"/.rpmbuild/RPMS/{noarch,x86_64,arm}
+	@mkdir -p $@/{BUILD,BUILDROOT,SOURCES,SPECS,SRPMS} $@/RPMS/{noarch,x86_64,arm}
 	@chmod -R g+rs,a+wX $@ || true
 
 .PHONY: build8 build9 run8 run9 run-home
