@@ -5,7 +5,6 @@ FROM quay.io/centos/centos:stream9
 ARG USER_NAME
 ARG USER_UID
 
-# dnf group install -y --setopt=install_weak_deps=False 'Development Tools'      \
 RUN                                                                                \
     : "${USER_NAME:?Build argument needs to be set and non-empty.}";               \
     : "${USER_UID:?Build argument needs to be set and non-empty.}";                \
@@ -17,6 +16,8 @@ RUN                                                                             
         git                                                                        \
         hostname                                                                   \
         make                                                                       \
+        perl                                                                       \
+        python3                                                                    \
         sqlite                                                                     \
         sudo                                                                       \
         tmux                                                                       \
@@ -27,6 +28,7 @@ RUN                                                                             
     && dnf install -y --allowerasing                                               \
         coreutils                                                                  \
         createrepo                                                                 \
+        mock                                                                       \
         rpm-build                                                                  \
         rpm-devel                                                                  \
         rpmdevtools                                                                \
@@ -35,14 +37,14 @@ RUN                                                                             
     && crb enable                                                                  \
     && dnf install -y                                                              \
         mc                                                                         \
-        mock                                                                       \
         neovim                                                                     \
         python3-neovim
 
 COPY override/ /
 
 RUN                                                                                \
-    passwd -l root                                                                 \
+    mkdir -p /usr/local/bin                                                        \
+    && passwd -l root                                                              \
     && useradd -m -U -s /usr/bin/zsh -G mock,wheel --uid="$USER_UID" "$USER_NAME"  \
     && passwd -d "$USER_NAME"                                                      \
     && chmod -R g+rwXs "/home/$USER_NAME"                                          \

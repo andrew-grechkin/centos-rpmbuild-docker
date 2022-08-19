@@ -30,7 +30,7 @@ lint: $(RPMBUILD_FOLDER)
 build-src:
 	@echo
 	@echo 'Building source RPMs...'
-	@cp -rf * $(RPMBUILD_FOLDER)/SOURCES
+	@cp -f * $(RPMBUILD_FOLDER)/SOURCES
 	@rpmbuild --undefine=_disable_source_fetch -bs *.spec
 
 build-install-deps:
@@ -38,11 +38,14 @@ build-install-deps:
 	@echo 'Installing dependencies...'
 	@sudo yum-builddep -y $(RPMBUILD_FOLDER)/SRPMS/*.src.rpm
 
-build: lint build-src build-install-deps
+build-from-source: build-install-deps
 	@echo
 	@echo 'Building RPMs...'
-	@rpmbuild --noclean -rb $(RPMBUILD_FOLDER)/SRPMS/*.src.rpm
-	@tree
+	@QA_CHECK_RPATHS=0 rpmbuild --noclean -rb $(RPMBUILD_FOLDER)/SRPMS/*.src.rpm
+	@chmod -R a+wX "$(HOME)"/rpmbuild || true
+	@tree "$(HOME)"/rpmbuild
+
+build: lint build-src build-from-source
 
 #@rpmbuild -rb $(RPMBUILD_FOLDER)/SRPMS/*.src.rpm
 # spectool -g -R *.spec

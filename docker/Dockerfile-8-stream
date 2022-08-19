@@ -5,6 +5,7 @@ FROM quay.io/centos/centos:stream8
 ARG USER_NAME
 ARG USER_UID
 
+# dnf group install -y --setopt=install_weak_deps=False 'Development Tools'      \
 RUN                                                                                \
     : "${USER_NAME:?Build argument needs to be set and non-empty.}";               \
     : "${USER_UID:?Build argument needs to be set and non-empty.}";                \
@@ -13,9 +14,13 @@ RUN                                                                             
         dnf                                                                        \
         epel-next-release                                                          \
         epel-release                                                               \
+        gcc-toolset-11                                                             \
         git                                                                        \
         hostname                                                                   \
         make                                                                       \
+        perl                                                                       \
+        python2                                                                    \
+        python3                                                                    \
         sqlite                                                                     \
         sudo                                                                       \
         tmux                                                                       \
@@ -26,23 +31,28 @@ RUN                                                                             
     && dnf install -y --allowerasing                                               \
         coreutils                                                                  \
         createrepo                                                                 \
+        mock                                                                       \
         rpm-build                                                                  \
         rpm-devel                                                                  \
         rpmdevtools                                                                \
         rpmlint                                                                    \
+    && yum-config-manager --set-enabled                                            \
+        epel-modular                                                               \
     && dnf update -y                                                               \
     && crb enable                                                                  \
     && dnf install -y                                                              \
         mc                                                                         \
-        mock                                                                       \
         neovim                                                                     \
         python3-neovim                                                             \
         vifm
 
 COPY override/ /
 
+    # alternatives --install /usr/bin/python python /usr/bin/python3 60              \
 RUN                                                                                \
-    passwd -l root                                                                 \
+    mkdir -p /usr/local/bin                                                        \
+    && ln -sf /usr/bin/python2 /usr/local/bin/python                               \
+    && passwd -l root                                                              \
     && useradd -m -U -s /usr/bin/zsh -G mock,wheel --uid="$USER_UID" "$USER_NAME"  \
     && passwd -d "$USER_NAME"                                                      \
     && chmod -R g+rwXs "/home/$USER_NAME"                                          \
