@@ -20,9 +20,6 @@ inst-devel:
 	dnf install -y sqlite
 	dnf install -y rpm-build rpm-devel rpmlint mock coreutils rpmdevtools python
 
-sign-rpm:
-	rpmsign --addsign -D '_gpg_name key_name' *.rpm
-
 lint: $(RPMBUILD_FOLDER)
 	@echo 'Linting...'
 	@rpmlint *.spec
@@ -43,9 +40,11 @@ build-from-source: build-install-deps
 	@echo 'Building RPMs...'
 	@QA_CHECK_RPATHS=0 rpmbuild --noclean -rb $(RPMBUILD_FOLDER)/SRPMS/*.src.rpm
 	@chmod -R a+wX "$(HOME)"/rpmbuild || true
+	@echo
 	@tree "$(HOME)"/rpmbuild
+	@echo
 
-build: lint build-src build-from-source
+build: lint build-src build-from-source sign
 
 #@rpmbuild -rb $(RPMBUILD_FOLDER)/SRPMS/*.src.rpm
 # spectool -g -R *.spec
@@ -65,3 +64,6 @@ expose:
 	sudo cp -rf ~/rpmbuild/SRPMS/*.rpm /srv/http/local/SRPMS
 	sudo createrepo --update /srv/http/local/RPMS
 	sudo createrepo --update /srv/http/local/SRPMS
+
+sign:
+	@$(HOME)/build/sign-rpms

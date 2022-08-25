@@ -34,6 +34,7 @@ RUN                                                                             
         mock                                                                       \
         rpm-build                                                                  \
         rpm-devel                                                                  \
+        rpm-sign                                                                   \
         rpmdevtools                                                                \
         rpmlint                                                                    \
     && yum-config-manager --set-enabled                                            \
@@ -55,6 +56,7 @@ RUN                                                                             
     && passwd -l root                                                              \
     && useradd -m -U -s /usr/bin/zsh -G mock,wheel --uid="$USER_UID" "$USER_NAME"  \
     && passwd -d "$USER_NAME"                                                      \
+    && touch "/var/db/sudo/lectured/$USER_NAME"                                    \
     && chmod -R g+rwXs "/home/$USER_NAME"                                          \
     && rm -rf /root
 

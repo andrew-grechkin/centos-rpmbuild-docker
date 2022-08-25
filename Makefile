@@ -1,18 +1,20 @@
+THIS_FILE     := $(abspath $(firstword $(MAKEFILE_LIST)))
+THIS_DIR      := $(dir $(THIS_FILE))
+GIT_REPO      := $(shell git config --file $(THIS_DIR)/.git/config --get remote.origin.url)
+GIT_REPO_NAME := $(shell basename -s .git $(GIT_REPO))
+
 BUILD_MAKEFILE  = $(THIS_DIR)/docker/override/etc/skel/build/Makefile
-GIT_REPO        = $(shell git config --file $(THIS_DIR)/.git/config --get remote.origin.url)
-GIT_REPO_NAME   = $(shell basename -s .git $(GIT_REPO))
 IMAGE8          = cos8-repo-sync
 IMAGE8_DUMMY    = /tmp/dummy-image-$(GIT_REPO_NAME)-build8
 IMAGE9          = cos9-repo-sync
 IMAGE9_DUMMY    = /tmp/dummy-image-$(GIT_REPO_NAME)-build9
-THIS_DIR        = $(dir $(THIS_FILE))
-THIS_FILE       = $(abspath $(firstword $(MAKEFILE_LIST)))
+NPROC          := $(shell nproc)
+SIGN_SCRIPT     = $(THIS_DIR)/docker/override/etc/skel/build/sign-rpms
 USER_HOME       = /home/$(USER_NAME)
 USER_NAME       = builder
 USER_UID       := $(shell id -u)
-NPROC          := $(shell nproc)
 
-$(IMAGE8_DUMMY): $(THIS_FILE) $(BUILD_MAKEFILE) $(THIS_DIR)/docker/Dockerfile-8-stream
+$(IMAGE8_DUMMY): $(THIS_FILE) $(BUILD_MAKEFILE) $(THIS_DIR)/docker/Dockerfile-8-stream $(SIGN_SCRIPT)
 	@docker build                             \
 		--build-arg USER_NAME=$(USER_NAME)    \
 		--build-arg USER_UID=$(USER_UID)      \
@@ -32,14 +34,28 @@ $(IMAGE9_DUMMY): $(THIS_FILE) $(BUILD_MAKEFILE) $(THIS_DIR)/docker/Dockerfile-9-
 
 $(PWD)/.rpmbuild:
 	@mkdir -p $@/{BUILD,BUILDROOT,SOURCES,SPECS,SRPMS} $@/RPMS/{noarch,x86_64,arm}
-	@chmod -R g+rs,a+wX $@ || true
 
-.PHONY: build8 build9 run8 run9 run-home
+.PHONY: build8 build8-from-source build9 run8 run9 run-home sign
+
+sign: $(IMAGE8_DUMMY) $(PWD)/.rpmbuild
+	@docker run --rm -it --privileged               \
+		--userns=keep-id                            \
+		-h 8-stream-$(USER_NAME)                    \
+		-e GPG_NAME                                 \
+		-e RPM_GPG_PRIV_KEY_DATA                    \
+		-e TERM=xterm-256color                      \
+		-v $(PWD)/.rpmbuild:$(USER_HOME)/rpmbuild   \
+		-v $(PWD):$(USER_HOME)/mnt:ro               \
+		$(IMAGE8)                                   \
+		make -f $(USER_HOME)/build/Makefile sign
 
 build8: $(IMAGE8_DUMMY) $(PWD)/.rpmbuild
 	@docker run --rm -it --privileged               \
 		--cpus="$$(( $(NPROC) - 2 ))"               \
+		--userns=keep-id                            \
 		-h 8-stream-$(USER_NAME)                    \
+		-e GPG_NAME                                 \
+		-e RPM_GPG_PRIV_KEY_DATA                    \
 		-e TERM=xterm-256color                      \
 		-v $(PWD)/.rpmbuild:$(USER_HOME)/rpmbuild   \
 		-v $(PWD):$(USER_HOME)/mnt:ro               \
@@ -50,7 +66,11 @@ build8: $(IMAGE8_DUMMY) $(PWD)/.rpmbuild
 build8-from-source: $(IMAGE8_DUMMY) $(PWD)/.rpmbuild
 	@cp -f *.src.rpm $(PWD)/.rpmbuild/SRPMS/
 	@docker run --rm -it --privileged               \
+		--cpus="$$(( $(NPROC) - 2 ))"               \
+		--userns=keep-id                            \
 		-h 8-stream-$(USER_NAME)                    \
+		-e GPG_NAME                                 \
+		-e RPM_GPG_PRIV_KEY_DATA                    \
 		-e TERM=xterm-256color                      \
 		-v $(PWD)/.rpmbuild:$(USER_HOME)/rpmbuild   \
 		-v $(PWD):$(USER_HOME)/mnt:ro               \
@@ -60,7 +80,11 @@ build8-from-source: $(IMAGE8_DUMMY) $(PWD)/.rpmbuild
 
 build9: $(IMAGE9_DUMMY) $(PWD)/.rpmbuild
 	@docker run --rm -it --privileged               \
+		--cpus="$$(( $(NPROC) - 2 ))"               \
+		--userns=keep-id                            \
 		-h 9-stream-$(USER_NAME)                    \
+		-e GPG_NAME                                 \
+		-e RPM_GPG_PRIV_KEY_DATA                    \
 		-e TERM=xterm-256color                      \
 		-v $(PWD)/.rpmbuild:$(USER_HOME)/rpmbuild   \
 		-v $(PWD):$(USER_HOME)/mnt:ro               \
@@ -70,6 +94,8 @@ build9: $(IMAGE9_DUMMY) $(PWD)/.rpmbuild
 
 run8: $(IMAGE8_DUMMY)
 	@docker run --rm -it --privileged      \
+		--cpus="$$(( $(NPROC) - 2 ))"      \
+		--userns=keep-id                   \
 		-h 8-stream-$(USER_NAME)           \
 		-e TERM=xterm-256color             \
 		-v /media/nfs/home/public/rpm:/rpm \
@@ -78,6 +104,8 @@ run8: $(IMAGE8_DUMMY)
 
 run9: $(IMAGE9_DUMMY)
 	@docker run --rm -it --privileged      \
+		--cpus="$$(( $(NPROC) - 2 ))"      \
+		--userns=keep-id                   \
 		-h 9-stream-$(USER_NAME)           \
 		-e TERM=xterm-256color             \
 		-v /media/nfs/home/public/rpm:/rpm \

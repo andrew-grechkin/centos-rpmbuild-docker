@@ -1,0 +1,47 @@
+#!/usr/bin/env bash
+
+set -Eeuo pipefail
+
+[[ -z "${GPG_NAME:-}" ]] && exit
+[[ -z "${RPM_GPG_PRIV_KEY_DATA:-}" ]] && exit
+
+readarray -d '' RPMS < <(find "$HOME/rpmbuild/RPMS" -type f -name '*.rpm' -print0)
+
+[[ ${#RPMS[@]} -eq 0 ]] && exit
+
+GNUPGHOME=/tmp/gnupg
+GPG_TTY="$(tty)"
+
+export GNUPGHOME GPG_TTY
+
+function prepare-keys() {
+	mkdir -p "${GNUPGHOME}"
+	chmod 700 "${GNUPGHOME}"
+
+	echo "$RPM_GPG_PRIV_KEY_DATA" | gpg -q --allow-secret-key-import --import
+
+	gpg -q -a --export "$GPG_NAME" >/tmp/pub.key
+	sudo rpm --import /tmp/pub.key
+	rpm -q gpg-pubkey --qf '%{name}-%{version}-%{release} --> %{summary}\n'
+
+	cat <<EOF >"$HOME/.rpmmacros"
+%_signature gpg
+%_gpg_path $GNUPGHOME
+%_gpg_name $GPG_NAME
+%_gpgbin /usr/bin/gpg2
+%__gpg_sign_cmd %{__gpg} gpg --force-v3-sigs --batch --verbose --no-armor --no-secmem-warning -u "%{_gpg_name}" -sbo %{__signature_filename} --digest-algo sha256 %{__plaintext_filename}'
+EOF
+}
+
+prepare-keys
+
+for RPM in "${RPMS[@]}"; do
+	echo
+	echo "> Sign: $RPM"
+	rpm --addsign "$RPM"
+
+	echo
+	echo "> Check: $RPM"
+	rpm --checksig "$RPM"
+	rpm -q --qf '%{SIGPGP:pgpsig} %{SIGGPG:pgpsig}\n' -p "$RPM"
+done
