@@ -1,15 +1,16 @@
-BUILD_MAKEFILE = $(THIS_DIR)/docker/override/etc/skel/build/Makefile
-GIT_REPO       = $(shell git config --file $(THIS_DIR)/.git/config --get remote.origin.url)
-GIT_REPO_NAME  = $(shell basename -s .git $(GIT_REPO))
-IMAGE8         = cos8-repo-sync
-IMAGE8_DUMMY   = /tmp/dummy-image-$(GIT_REPO_NAME)-build8
-IMAGE9         = cos9-repo-sync
-IMAGE9_DUMMY   = /tmp/dummy-image-$(GIT_REPO_NAME)-build9
-THIS_DIR       = $(dir $(THIS_FILE))
-THIS_FILE      = $(abspath $(firstword $(MAKEFILE_LIST)))
-USER_HOME      = /home/$(USER_NAME)
-USER_NAME      = builder
-USER_UID       = $(shell id -u)
+BUILD_MAKEFILE  = $(THIS_DIR)/docker/override/etc/skel/build/Makefile
+GIT_REPO        = $(shell git config --file $(THIS_DIR)/.git/config --get remote.origin.url)
+GIT_REPO_NAME   = $(shell basename -s .git $(GIT_REPO))
+IMAGE8          = cos8-repo-sync
+IMAGE8_DUMMY    = /tmp/dummy-image-$(GIT_REPO_NAME)-build8
+IMAGE9          = cos9-repo-sync
+IMAGE9_DUMMY    = /tmp/dummy-image-$(GIT_REPO_NAME)-build9
+THIS_DIR        = $(dir $(THIS_FILE))
+THIS_FILE       = $(abspath $(firstword $(MAKEFILE_LIST)))
+USER_HOME       = /home/$(USER_NAME)
+USER_NAME       = builder
+USER_UID       := $(shell id -u)
+NPROC          := $(shell nproc)
 
 $(IMAGE8_DUMMY): $(THIS_FILE) $(BUILD_MAKEFILE) $(THIS_DIR)/docker/Dockerfile-8-stream
 	@docker build                             \
@@ -37,6 +38,7 @@ $(PWD)/.rpmbuild:
 
 build8: $(IMAGE8_DUMMY) $(PWD)/.rpmbuild
 	@docker run --rm -it --privileged               \
+		--cpus="$$(( $(NPROC) - 2 ))"               \
 		-h 8-stream-$(USER_NAME)                    \
 		-e TERM=xterm-256color                      \
 		-v $(PWD)/.rpmbuild:$(USER_HOME)/rpmbuild   \

@@ -30,7 +30,7 @@ lint: $(RPMBUILD_FOLDER)
 build-src:
 	@echo
 	@echo 'Building source RPMs...'
-	@cp -f * $(RPMBUILD_FOLDER)/SOURCES
+	@cp -f * $(RPMBUILD_FOLDER)/SOURCES || true
 	@rpmbuild --undefine=_disable_source_fetch -bs *.spec
 
 build-install-deps:
