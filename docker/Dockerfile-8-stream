@@ -14,7 +14,7 @@ RUN                                                                             
         dnf                                                                        \
         epel-next-release                                                          \
         epel-release                                                               \
-        gcc-toolset-11                                                             \
+        gcc-toolset-9                                                              \
         git                                                                        \
         hostname                                                                   \
         make                                                                       \

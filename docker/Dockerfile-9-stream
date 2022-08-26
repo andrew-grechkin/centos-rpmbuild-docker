@@ -13,6 +13,7 @@ RUN                                                                             
         dnf                                                                        \
         epel-next-release                                                          \
         epel-release                                                               \
+        gcc-toolset-12                                                             \
         git                                                                        \
         hostname                                                                   \
         make                                                                       \
@@ -31,6 +32,7 @@ RUN                                                                             
         mock                                                                       \
         rpm-build                                                                  \
         rpm-devel                                                                  \
+        rpm-sign                                                                   \
         rpmdevtools                                                                \
         rpmlint                                                                    \
     && dnf update -y                                                               \
@@ -47,6 +49,7 @@ RUN                                                                             
     && passwd -l root                                                              \
     && useradd -m -U -s /usr/bin/zsh -G mock,wheel --uid="$USER_UID" "$USER_NAME"  \
     && passwd -d "$USER_NAME"                                                      \
+    && touch "/var/db/sudo/lectured/$USER_NAME"                                    \
     && chmod -R g+rwXs "/home/$USER_NAME"                                          \
     && rm -rf /root
 

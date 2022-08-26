@@ -51,7 +51,7 @@ sign: $(IMAGE8_DUMMY) $(PWD)/.rpmbuild
 
 build8: $(IMAGE8_DUMMY) $(PWD)/.rpmbuild
 	@docker run --rm -it --privileged               \
-		--cpus="$$(( $(NPROC) - 2 ))"               \
+		--cpus="$$(( $(NPROC) / 2 ))"               \
 		--userns=keep-id                            \
 		-h 8-stream-$(USER_NAME)                    \
 		-e GPG_NAME                                 \
