@@ -2,8 +2,11 @@
 
 set -Eeuo pipefail
 
-[[ -z "${GPG_NAME:-}" ]] && exit
-[[ -z "${RPM_GPG_PRIV_KEY_DATA:-}" ]] && exit
+[[ -z "${GPG_PRIV_KEY_ID:-}" ]] && exit
+[[ -z "${GPG_PRIV_KEY_BASE64:-}" ]] && exit
+
+OS_RELEASE="$(rpm --eval '%{centos_ver}')"
+[[ "$OS_RELEASE" == "9" ]] && exit
 
 readarray -d '' RPMS < <(find "$HOME/rpmbuild/RPMS" -type f -name '*.rpm' -print0)
 
@@ -18,16 +21,16 @@ function prepare-keys() {
 	mkdir -p "${GNUPGHOME}"
 	chmod 700 "${GNUPGHOME}"
 
-	echo "$RPM_GPG_PRIV_KEY_DATA" | gpg -q --allow-secret-key-import --import
+	echo "$GPG_PRIV_KEY_BASE64" | base64 -d | gpg -q --allow-secret-key-import --import
 
-	gpg -q -a --export "$GPG_NAME" >/tmp/pub.key
+	gpg -q -a --export "$GPG_PRIV_KEY_ID" >/tmp/pub.key
 	sudo rpm --import /tmp/pub.key
 	rpm -q gpg-pubkey --qf '%{name}-%{version}-%{release} --> %{summary}\n'
 
 	cat <<EOF >"$HOME/.rpmmacros"
 %_signature gpg
 %_gpg_path $GNUPGHOME
-%_gpg_name $GPG_NAME
+%_gpg_name $GPG_PRIV_KEY_ID
 %_gpgbin /usr/bin/gpg2
 %__gpg_sign_cmd %{__gpg} gpg --force-v3-sigs --batch --verbose --no-armor --no-secmem-warning -u "%{_gpg_name}" -sbo %{__signature_filename} --digest-algo sha256 %{__plaintext_filename}'
 EOF
@@ -36,8 +39,10 @@ EOF
 prepare-keys
 
 for RPM in "${RPMS[@]}"; do
+	# [[ "$RPM" =~ el${OS_RELEASE}.x86_64.rpm ]] || continue
+
 	echo
-	echo "> Sign: $RPM"
+	echo "> Sign with KeyID '$GPG_PRIV_KEY_ID': $RPM"
 	rpm --addsign "$RPM"
 
 	echo

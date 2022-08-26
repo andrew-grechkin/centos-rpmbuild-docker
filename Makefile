@@ -23,7 +23,7 @@ $(IMAGE8_DUMMY): $(THIS_FILE) $(BUILD_MAKEFILE) $(THIS_DIR)/docker/Dockerfile-8-
 	$(THIS_DIR)/docker
 	@touch $@
 
-$(IMAGE9_DUMMY): $(THIS_FILE) $(BUILD_MAKEFILE) $(THIS_DIR)/docker/Dockerfile-9-stream
+$(IMAGE9_DUMMY): $(THIS_FILE) $(BUILD_MAKEFILE) $(THIS_DIR)/docker/Dockerfile-9-stream $(SIGN_SCRIPT)
 	@docker build                             \
 		--build-arg USER_NAME=$(USER_NAME)    \
 		--build-arg USER_UID=$(USER_UID)      \
@@ -35,27 +35,31 @@ $(IMAGE9_DUMMY): $(THIS_FILE) $(BUILD_MAKEFILE) $(THIS_DIR)/docker/Dockerfile-9-
 $(PWD)/.rpmbuild:
 	@mkdir -p $@/{BUILD,BUILDROOT,SOURCES,SPECS,SRPMS} $@/RPMS/{noarch,x86_64,arm}
 
-.PHONY: build8 build8-from-source build9 run8 run9 run-home sign
+.PHONY: build8 build8-from-source build9 run8 run9 run-home sign sign-helper
 
-sign: $(IMAGE8_DUMMY) $(PWD)/.rpmbuild
+# export GPG_KEY_ID=
+# sign-help%: export GPG_PRIV_KEY_BASE64=$(shell gpg --export-secret-keys $(GPG_KEY_ID) | base64 -w 0)
+sign-helper:
 	@docker run --rm -it --privileged               \
 		--userns=keep-id                            \
 		-h 8-stream-$(USER_NAME)                    \
-		-e GPG_NAME                                 \
-		-e RPM_GPG_PRIV_KEY_DATA                    \
+		-e GPG_PRIV_KEY_ID                          \
+		-e GPG_PRIV_KEY_BASE64                      \
 		-e TERM=xterm-256color                      \
 		-v $(PWD)/.rpmbuild:$(USER_HOME)/rpmbuild   \
 		-v $(PWD):$(USER_HOME)/mnt:ro               \
 		$(IMAGE8)                                   \
 		make -f $(USER_HOME)/build/Makefile sign
 
+sign: $(IMAGE8_DUMMY) $(PWD)/.rpmbuild sign-helper
+
 build8: $(IMAGE8_DUMMY) $(PWD)/.rpmbuild
 	@docker run --rm -it --privileged               \
 		--cpus="$$(( $(NPROC) / 2 ))"               \
 		--userns=keep-id                            \
 		-h 8-stream-$(USER_NAME)                    \
-		-e GPG_NAME                                 \
-		-e RPM_GPG_PRIV_KEY_DATA                    \
+		-e GPG_PRIV_KEY_ID                          \
+		-e GPG_PRIV_KEY_BASE64                      \
 		-e TERM=xterm-256color                      \
 		-v $(PWD)/.rpmbuild:$(USER_HOME)/rpmbuild   \
 		-v $(PWD):$(USER_HOME)/mnt:ro               \
@@ -69,8 +73,8 @@ build8-from-source: $(IMAGE8_DUMMY) $(PWD)/.rpmbuild
 		--cpus="$$(( $(NPROC) - 2 ))"               \
 		--userns=keep-id                            \
 		-h 8-stream-$(USER_NAME)                    \
-		-e GPG_NAME                                 \
-		-e RPM_GPG_PRIV_KEY_DATA                    \
+		-e GPG_PRIV_KEY_ID                          \
+		-e GPG_PRIV_KEY_BASE64                      \
 		-e TERM=xterm-256color                      \
 		-v $(PWD)/.rpmbuild:$(USER_HOME)/rpmbuild   \
 		-v $(PWD):$(USER_HOME)/mnt:ro               \
@@ -83,8 +87,8 @@ build9: $(IMAGE9_DUMMY) $(PWD)/.rpmbuild
 		--cpus="$$(( $(NPROC) - 2 ))"               \
 		--userns=keep-id                            \
 		-h 9-stream-$(USER_NAME)                    \
-		-e GPG_NAME                                 \
-		-e RPM_GPG_PRIV_KEY_DATA                    \
+		-e GPG_PRIV_KEY_ID                          \
+		-e GPG_PRIV_KEY_BASE64                      \
 		-e TERM=xterm-256color                      \
 		-v $(PWD)/.rpmbuild:$(USER_HOME)/rpmbuild   \
 		-v $(PWD):$(USER_HOME)/mnt:ro               \
