@@ -14,6 +14,8 @@ USER_HOME       = /home/$(USER_NAME)
 USER_NAME       = builder
 USER_UID       := $(shell id -u)
 
+export PODMAN_USERNS=keep-id
+
 $(IMAGE8_DUMMY): $(THIS_FILE) $(BUILD_MAKEFILE) $(THIS_DIR)/docker/Dockerfile-8-stream $(SIGN_SCRIPT)
 	@docker build                             \
 		--build-arg USER_NAME=$(USER_NAME)    \
@@ -33,7 +35,7 @@ $(IMAGE9_DUMMY): $(THIS_FILE) $(BUILD_MAKEFILE) $(THIS_DIR)/docker/Dockerfile-9-
 	@touch $@
 
 $(PWD)/.rpmbuild:
-	@mkdir -p $@/{BUILD,BUILDROOT,SOURCES,SPECS,SRPMS} $@/RPMS/{noarch,x86_64,arm}
+	@mkdir -p $@/{BUILD,BUILDROOT,RPMS,SOURCES,SPECS,SRPMS}
 
 .PHONY: build8 build8-from-source build9 run8 run9 run-home sign sign-helper
 
@@ -41,7 +43,6 @@ $(PWD)/.rpmbuild:
 # sign-help%: export GPG_PRIV_KEY_BASE64=$(shell gpg --export-secret-keys $(GPG_KEY_ID) | base64 -w 0)
 sign-helper:
 	@docker run --rm -it --privileged               \
-		--userns=keep-id                            \
 		-h 8-stream-$(USER_NAME)                    \
 		-e GPG_PRIV_KEY_ID                          \
 		-e GPG_PRIV_KEY_BASE64                      \
@@ -55,8 +56,7 @@ sign: $(IMAGE8_DUMMY) $(PWD)/.rpmbuild sign-helper
 
 build8: $(IMAGE8_DUMMY) $(PWD)/.rpmbuild
 	@docker run --rm -it --privileged               \
-		--cpus="$$(( $(NPROC) / 2 ))"               \
-		--userns=keep-id                            \
+		--cpus="$$(( $(NPROC) - 2 ))"               \
 		-h 8-stream-$(USER_NAME)                    \
 		-e GPG_PRIV_KEY_ID                          \
 		-e GPG_PRIV_KEY_BASE64                      \
@@ -71,7 +71,6 @@ build8-from-source: $(IMAGE8_DUMMY) $(PWD)/.rpmbuild
 	@cp -f *.src.rpm $(PWD)/.rpmbuild/SRPMS/
 	@docker run --rm -it --privileged               \
 		--cpus="$$(( $(NPROC) - 2 ))"               \
-		--userns=keep-id                            \
 		-h 8-stream-$(USER_NAME)                    \
 		-e GPG_PRIV_KEY_ID                          \
 		-e GPG_PRIV_KEY_BASE64                      \
@@ -85,7 +84,6 @@ build8-from-source: $(IMAGE8_DUMMY) $(PWD)/.rpmbuild
 build9: $(IMAGE9_DUMMY) $(PWD)/.rpmbuild
 	@docker run --rm -it --privileged               \
 		--cpus="$$(( $(NPROC) - 2 ))"               \
-		--userns=keep-id                            \
 		-h 9-stream-$(USER_NAME)                    \
 		-e GPG_PRIV_KEY_ID                          \
 		-e GPG_PRIV_KEY_BASE64                      \
@@ -99,7 +97,6 @@ build9: $(IMAGE9_DUMMY) $(PWD)/.rpmbuild
 run8: $(IMAGE8_DUMMY)
 	@docker run --rm -it --privileged      \
 		--cpus="$$(( $(NPROC) - 2 ))"      \
-		--userns=keep-id                   \
 		-h 8-stream-$(USER_NAME)           \
 		-e TERM=xterm-256color             \
 		-v /media/nfs/home/public/rpm:/rpm \
@@ -109,7 +106,6 @@ run8: $(IMAGE8_DUMMY)
 run9: $(IMAGE9_DUMMY)
 	@docker run --rm -it --privileged      \
 		--cpus="$$(( $(NPROC) - 2 ))"      \
-		--userns=keep-id                   \
 		-h 9-stream-$(USER_NAME)           \
 		-e TERM=xterm-256color             \
 		-v /media/nfs/home/public/rpm:/rpm \
