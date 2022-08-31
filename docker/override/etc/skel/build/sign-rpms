@@ -2,8 +2,10 @@
 
 set -Eeuo pipefail
 
-[[ -z "${GPG_PRIV_KEY_ID:-}" ]] && exit
-[[ -z "${GPG_PRIV_KEY_BASE64:-}" ]] && exit
+[[ -z "${GPG_PRIV_KEY_ID:-}" ]] || [[ -z "${GPG_PRIV_KEY_BASE64:-}" ]] && {
+	echo "GPG_PRIV_KEY_ID and/or GPG_PRIV_KEY_BASE64 is not provided. RPMs will stay unsigned"
+	exit
+}
 
 OS_RELEASE="$(rpm --eval '%{centos_ver}')"
 [[ "$OS_RELEASE" == "9" ]] && exit
