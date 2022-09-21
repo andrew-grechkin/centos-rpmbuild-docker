@@ -4,9 +4,9 @@ GIT_REPO      := $(shell git config --file $(THIS_DIR)/.git/config --get remote.
 GIT_REPO_NAME := $(shell basename -s .git $(GIT_REPO))
 
 BUILD_MAKEFILE  = $(THIS_DIR)/docker/override/etc/skel/build/Makefile
-IMAGE8          = cos8-repo-sync
+IMAGE8          = cos8-rpm-build
 IMAGE8_DUMMY    = /tmp/dummy-image-$(GIT_REPO_NAME)-build8
-IMAGE9          = cos9-repo-sync
+IMAGE9          = cos9-rpm-build
 IMAGE9_DUMMY    = /tmp/dummy-image-$(GIT_REPO_NAME)-build9
 NPROC          := $(shell nproc)
 SIGN_SCRIPT     = $(THIS_DIR)/docker/override/etc/skel/build/sign-rpms
@@ -17,6 +17,7 @@ USER_UID       := $(shell id -u)
 export PODMAN_USERNS=keep-id
 
 $(IMAGE8_DUMMY): $(THIS_FILE) $(BUILD_MAKEFILE) $(THIS_DIR)/docker/Dockerfile-8-stream $(SIGN_SCRIPT)
+	@echo "> Preparing docker centos-8-stream image..."
 	@docker build                             \
 		--build-arg USER_NAME=$(USER_NAME)    \
 		--build-arg USER_UID=$(USER_UID)      \
@@ -26,6 +27,7 @@ $(IMAGE8_DUMMY): $(THIS_FILE) $(BUILD_MAKEFILE) $(THIS_DIR)/docker/Dockerfile-8-
 	@touch $@
 
 $(IMAGE9_DUMMY): $(THIS_FILE) $(BUILD_MAKEFILE) $(THIS_DIR)/docker/Dockerfile-9-stream $(SIGN_SCRIPT)
+	@echo "> Preparing docker centos-9-stream image..."
 	@docker build                             \
 		--build-arg USER_NAME=$(USER_NAME)    \
 		--build-arg USER_UID=$(USER_UID)      \

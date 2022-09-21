@@ -1,7 +1,7 @@
-.DEFAULT_GOAL   := build
 OS_RELEASE      := $(shell rpm --eval '%{centos_ver}')
 RPMBUILD_FOLDER := $(HOME)/rpmbuild
 
+.DEFAULT_GOAL := build
 .PHONY:                \
 	build              \
 	build-bin-8        \
@@ -27,7 +27,7 @@ build-bin-9: lint build-src
 
 build-from-source: build-install-deps
 	@echo
-	@echo 'Building RPMs...'
+	@echo '> Building RPMs...'
 	@QA_CHECK_RPATHS=0 rpmbuild --noclean -rb $(RPMBUILD_FOLDER)/SRPMS/*.el$(OS_RELEASE).src.rpm
 	@chmod -R a+wX "$(HOME)"/rpmbuild || true
 	@echo
@@ -40,7 +40,7 @@ build-from-source: build-install-deps
 
 build-install-deps:
 	@echo
-	@echo 'Installing dependencies...'
+	@echo '> Installing dependencies...'
 	@sudo yum-builddep -y $(RPMBUILD_FOLDER)/SRPMS/*.el$(OS_RELEASE).src.rpm
 
 build-mock: lint build-src
@@ -48,7 +48,7 @@ build-mock: lint build-src
 
 build-src:
 	@echo
-	@echo 'Building source RPMs...'
+	@echo '> Building source RPMs...'
 	@cp -f * $(RPMBUILD_FOLDER)/SOURCES || true
 	@rpmbuild --undefine=_disable_source_fetch -bs *.spec
 
@@ -59,7 +59,7 @@ expose:
 	sudo createrepo --update /srv/http/local/SRPMS
 
 lint: $(RPMBUILD_FOLDER)
-	@echo 'Linting...'
+	@echo '> Linting...'
 	@rpmlint *.spec
 
 sign:
