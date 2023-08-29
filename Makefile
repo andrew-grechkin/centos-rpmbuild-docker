@@ -3,6 +3,8 @@ THIS_DIR      := $(dir $(THIS_FILE))
 GIT_REPO      := $(shell git config --file $(THIS_DIR)/.git/config --get remote.origin.url)
 GIT_REPO_NAME := $(shell basename -s .git $(GIT_REPO))
 
+IGNORE_RPATH_ERRORS = $(shell echo $$[ 0x0001|0x0020 ])
+
 BUILD_MAKEFILE  = $(THIS_DIR)/docker/override/etc/skel/build/Makefile
 IMAGE8          = cos8-rpm-build
 IMAGE8_DUMMY    = /tmp/dummy-image-$(GIT_REPO_NAME)-build8
@@ -63,6 +65,7 @@ build8: $(IMAGE8_DUMMY) $(PWD)/.rpmbuild
 		-e GPG_PRIV_KEY_ID                          \
 		-e GPG_PRIV_KEY_BASE64                      \
 		-e TERM=xterm-256color                      \
+		-e QA_RPATHS=$(IGNORE_RPATH_ERRORS)         \
 		-v $(PWD)/.rpmbuild:$(USER_HOME)/rpmbuild   \
 		-v $(PWD):$(USER_HOME)/mnt:ro               \
 		-w $(USER_HOME)/mnt                         \
@@ -77,6 +80,7 @@ build8-from-source: $(IMAGE8_DUMMY) $(PWD)/.rpmbuild
 		-e GPG_PRIV_KEY_ID                          \
 		-e GPG_PRIV_KEY_BASE64                      \
 		-e TERM=xterm-256color                      \
+		-e QA_RPATHS=$(IGNORE_RPATH_ERRORS)         \
 		-v $(PWD)/.rpmbuild:$(USER_HOME)/rpmbuild   \
 		-v $(PWD):$(USER_HOME)/mnt:ro               \
 		-w $(USER_HOME)/mnt                         \
@@ -90,6 +94,7 @@ build9: $(IMAGE9_DUMMY) $(PWD)/.rpmbuild
 		-e GPG_PRIV_KEY_ID                          \
 		-e GPG_PRIV_KEY_BASE64                      \
 		-e TERM=xterm-256color                      \
+		-e QA_RPATHS=$(IGNORE_RPATH_ERRORS)         \
 		-v $(PWD)/.rpmbuild:$(USER_HOME)/rpmbuild   \
 		-v $(PWD):$(USER_HOME)/mnt:ro               \
 		-w $(USER_HOME)/mnt                         \
@@ -97,26 +102,26 @@ build9: $(IMAGE9_DUMMY) $(PWD)/.rpmbuild
 		make -f $(USER_HOME)/build/Makefile build
 
 run8: $(IMAGE8_DUMMY)
-	@docker run --rm -it --privileged      \
-		--cpus="$$(( $(NPROC) - 2 ))"      \
-		-h 8-stream-$(USER_NAME)           \
-		-e TERM=xterm-256color             \
-		-v /media/nfs/home/public/rpm:/rpm \
-		-v $(PWD):$(USER_HOME)/mnt:ro      \
+	@docker run --rm -it --privileged               \
+		--cpus="$$(( $(NPROC) - 2 ))"               \
+		-h 8-stream-$(USER_NAME)                    \
+		-e TERM=xterm-256color                      \
+		-v /media/nfs/home/public/rpm:/rpm          \
+		-v $(PWD):$(USER_HOME)/mnt:ro               \
 		$(IMAGE8)
 
 run9: $(IMAGE9_DUMMY)
-	@docker run --rm -it --privileged      \
-		--cpus="$$(( $(NPROC) - 2 ))"      \
-		-h 9-stream-$(USER_NAME)           \
-		-e TERM=xterm-256color             \
-		-v /media/nfs/home/public/rpm:/rpm \
-		-v $(PWD):$(USER_HOME)/mnt:ro      \
+	@docker run --rm -it --privileged               \
+		--cpus="$$(( $(NPROC) - 2 ))"               \
+		-h 9-stream-$(USER_NAME)                    \
+		-e TERM=xterm-256color                      \
+		-v /media/nfs/home/public/rpm:/rpm          \
+		-v $(PWD):$(USER_HOME)/mnt:ro               \
 		$(IMAGE9)
 
 run-home: $(IMAGE9_DUMMY)
-	@sudo docker run --rm -it       \
-		-h 9-stream-$(USER_NAME)    \
-		-e TERM=xterm-256color      \
-		-v /volume1/public/rpm:/rpm \
+	@sudo docker run --rm -it                       \
+		-h 9-stream-$(USER_NAME)                    \
+		-e TERM=xterm-256color                      \
+		-v /volume1/public/rpm:/rpm                 \
 		$(IMAGE9)

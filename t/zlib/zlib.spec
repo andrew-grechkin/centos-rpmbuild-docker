@@ -1,6 +1,6 @@
 Name:    zlib
 Version: 1.3
-Release: 5%{?dist}
+Release: 1%{?dist}
 Summary: Compression and decompression library
 # /contrib/dotzlib/ have Boost license
 License: zlib and Boost
